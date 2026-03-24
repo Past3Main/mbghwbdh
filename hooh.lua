@@ -23,14 +23,14 @@ frameCorner.Parent = frame
 local running = true
 local minimized = false
 
--- FUNCTIONS
+-- FUNCTION
 local function getHRP()
     local char = player.Character or player.CharacterAdded:Wait()
     return char:WaitForChild("HumanoidRootPart")
 end
 
 -- =========================
--- CREATE TOGGLE
+-- TOGGLE FUNCTION
 -- =========================
 local function createToggle(parent, position, callback)
     local btn = Instance.new("TextButton")
@@ -63,7 +63,9 @@ local function createToggle(parent, position, callback)
 
         state = not state
         local targetX = state and 47 or 3
-        TweenService:Create(circle, TweenInfo.new(0.2), {Position = UDim2.new(0, targetX, 0, 3)}):Play()
+        TweenService:Create(circle, TweenInfo.new(0.2), {
+            Position = UDim2.new(0, targetX, 0, 3)
+        }):Play()
 
         if callback then callback(state) end
 
@@ -92,11 +94,11 @@ local anchorToggle = createToggle(frame, UDim2.new(0,10,0,50), function(state)
 end)
 
 local afkToggle = createToggle(frame, UDim2.new(0,10,0,100), function(state)
-    -- Anti-AFK akan di loop
+    -- dipakai di loop
 end)
 
 -- =========================
--- BUTTONS: CLOSE & MINIMIZE
+-- BUTTONS
 -- =========================
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 28, 0, 28)
@@ -106,6 +108,7 @@ closeBtn.Text = "X"
 closeBtn.TextColor3 = Color3.new(1,1,1)
 closeBtn.BorderSizePixel = 0
 closeBtn.Parent = frame
+
 local closeCorner = Instance.new("UICorner")
 closeCorner.CornerRadius = UDim.new(1,0)
 closeCorner.Parent = closeBtn
@@ -113,32 +116,69 @@ closeCorner.Parent = closeBtn
 local minBtn = Instance.new("TextButton")
 minBtn.Size = UDim2.new(0,28,0,28)
 minBtn.Position = UDim2.new(1,-68,0,6)
-minBtn.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
+minBtn.BackgroundColor3 = Color3.fromRGB(120,120,120)
 minBtn.Text = "-"
 minBtn.TextColor3 = Color3.new(1,1,1)
 minBtn.BorderSizePixel = 0
 minBtn.Parent = frame
+
 local minCorner = Instance.new("UICorner")
 minCorner.CornerRadius = UDim.new(1,0)
 minCorner.Parent = minBtn
 
--- MINIMIZE LOGIC
-minBtn.MouseButton1Click:Connect(function()
-    minimized = not minimized
+-- =========================
+-- IMAGE (ICON MINIMIZE)
+-- =========================
+local image = Instance.new("ImageLabel")
+image.Size = UDim2.new(1,0,1,0)
+image.BackgroundTransparency = 1
+image.Image = "rbxassetid://ID_GAMBAR_KAMU"
+image.Visible = false
+image.Parent = frame
+image.ScaleType = Enum.ScaleType.Crop
 
-    if minimized then
-        frame:TweenSize(UDim2.new(0,60,0,60), "Out", "Quad", 0.2, true)
-        anchorToggle.button.Visible = false
-        afkToggle.button.Visible = false
-    else
-        frame:TweenSize(UDim2.new(0,220,0,160), "Out", "Quad", 0.2, true)
-        anchorToggle.button.Visible = true
-        afkToggle.button.Visible = true
-    end
+local imgCorner = Instance.new("UICorner")
+imgCorner.CornerRadius = UDim.new(0,14)
+imgCorner.Parent = image
+
+local imageButton = Instance.new("TextButton")
+imageButton.Size = UDim2.new(1,0,1,0)
+imageButton.BackgroundTransparency = 1
+imageButton.Text = ""
+imageButton.Parent = image
+
+-- =========================
+-- MINIMIZE
+-- =========================
+minBtn.MouseButton1Click:Connect(function()
+    minimized = true
+
+    frame:TweenSize(UDim2.new(0,60,0,60), "Out", "Quad", 0.2, true)
+
+    anchorToggle.button.Visible = false
+    afkToggle.button.Visible = false
+    closeBtn.Visible = false
+    minBtn.Visible = false
+
+    image.Visible = true
+end)
+
+-- EXPAND (klik icon)
+imageButton.MouseButton1Click:Connect(function()
+    minimized = false
+
+    frame:TweenSize(UDim2.new(0,220,0,160), "Out", "Quad", 0.2, true)
+
+    anchorToggle.button.Visible = true
+    afkToggle.button.Visible = true
+    closeBtn.Visible = true
+    minBtn.Visible = true
+
+    image.Visible = false
 end)
 
 -- =========================
--- ANTI-AFK LOOP
+-- ANTI AFK
 -- =========================
 spawn(function()
     while running do
@@ -152,22 +192,19 @@ spawn(function()
 end)
 
 -- =========================
--- DESTROY ALL (X BUTTON)
+-- DESTROY ALL
 -- =========================
 local function destroyAll()
     running = false
 
-    -- reset anchor
     if player.Character then
         local hrp = player.Character:FindFirstChild("HumanoidRootPart")
         if hrp then hrp.Anchored = false end
     end
 
-    -- reset toggle state
     anchorToggle.setState(false)
     afkToggle.setState(false)
 
-    -- destroy GUI
     gui:Destroy()
 end
 
