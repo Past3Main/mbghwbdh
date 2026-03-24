@@ -133,7 +133,7 @@ local image = Instance.new("ImageLabel")
 image.Size = UDim2.new(1,0,1,0)
 image.BackgroundTransparency = 1
 image.Image = "rbxassetid://100141220459015"
-image.Visible = false
+image.Visible = true
 image.Parent = frame
 image.ScaleType = Enum.ScaleType.Crop
 
