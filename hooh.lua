@@ -19,6 +19,10 @@ local frameCorner = Instance.new("UICorner")
 frameCorner.CornerRadius = UDim.new(0, 14)
 frameCorner.Parent = frame
 
+-- FLAGS
+local running = true
+local minimized = false
+
 -- FUNCTIONS
 local function getHRP()
     local char = player.Character or player.CharacterAdded:Wait()
@@ -26,42 +30,45 @@ local function getHRP()
 end
 
 -- =========================
--- TOGGLE CREATOR
+-- CREATE TOGGLE
 -- =========================
 local function createToggle(parent, position, callback)
-    local bg = Instance.new("Frame")
-    bg.Size = UDim2.new(0, 80, 0, 36)
-    bg.Position = position
-    bg.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    bg.BorderSizePixel = 0
-    bg.Parent = parent
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 80, 0, 36)
+    btn.Position = position
+    btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    btn.Text = ""
+    btn.Parent = parent
 
-    local bgCorner = Instance.new("UICorner")
-    bgCorner.CornerRadius = UDim.new(1,0)
-    bgCorner.Parent = bg
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(1,0)
+    corner.Parent = btn
 
     local circle = Instance.new("Frame")
     circle.Size = UDim2.new(0, 30, 0, 30)
     circle.Position = UDim2.new(0, 3, 0, 3)
     circle.BackgroundColor3 = Color3.fromRGB(255,255,255)
-    circle.Parent = bg
+    circle.Parent = btn
 
     local circleCorner = Instance.new("UICorner")
     circleCorner.CornerRadius = UDim.new(1,0)
     circleCorner.Parent = circle
 
     local state = false
+    local debounce = false
 
-    bg.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            state = not state
-            local targetX = state and 47 or 3
-            TweenService:Create(circle, TweenInfo.new(0.2), {
-                Position = UDim2.new(0, targetX, 0, 3)
-            }):Play()
+    btn.MouseButton1Click:Connect(function()
+        if debounce then return end
+        debounce = true
 
-            if callback then callback(state) end
-        end
+        state = not state
+        local targetX = state and 47 or 3
+        TweenService:Create(circle, TweenInfo.new(0.2), {Position = UDim2.new(0, targetX, 0, 3)}):Play()
+
+        if callback then callback(state) end
+
+        task.wait(0.2)
+        debounce = false
     end)
 
     return {
@@ -71,28 +78,25 @@ local function createToggle(parent, position, callback)
             local targetX = state and 47 or 3
             circle.Position = UDim2.new(0, targetX, 0, 3)
             if callback then callback(state) end
-        end
+        end,
+        button = btn
     }
 end
 
 -- =========================
--- STATES
+-- TOGGLES
 -- =========================
-local running = true
-
--- Anchor (atas)
 local anchorToggle = createToggle(frame, UDim2.new(0,10,0,50), function(state)
     local hrp = getHRP()
     hrp.Anchored = state
 end)
 
--- Anti AFK (bawah)
 local afkToggle = createToggle(frame, UDim2.new(0,10,0,100), function(state)
-    -- state dipakai di loop
+    -- Anti-AFK akan di loop
 end)
 
 -- =========================
--- BUTTONS
+-- BUTTONS: CLOSE & MINIMIZE
 -- =========================
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 28, 0, 28)
@@ -102,48 +106,39 @@ closeBtn.Text = "X"
 closeBtn.TextColor3 = Color3.new(1,1,1)
 closeBtn.BorderSizePixel = 0
 closeBtn.Parent = frame
-
 local closeCorner = Instance.new("UICorner")
 closeCorner.CornerRadius = UDim.new(1,0)
 closeCorner.Parent = closeBtn
 
 local minBtn = Instance.new("TextButton")
-minBtn.Size = UDim2.new(0, 28, 0, 28)
-minBtn.Position = UDim2.new(1, -68, 0, 6)
+minBtn.Size = UDim2.new(0,28,0,28)
+minBtn.Position = UDim2.new(1,-68,0,6)
 minBtn.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
 minBtn.Text = "-"
 minBtn.TextColor3 = Color3.new(1,1,1)
 minBtn.BorderSizePixel = 0
 minBtn.Parent = frame
-
 local minCorner = Instance.new("UICorner")
 minCorner.CornerRadius = UDim.new(1,0)
 minCorner.Parent = minBtn
 
--- =========================
--- MINIMIZE
--- =========================
-local minimized = false
+-- MINIMIZE LOGIC
 minBtn.MouseButton1Click:Connect(function()
     minimized = not minimized
 
     if minimized then
         frame:TweenSize(UDim2.new(0,60,0,60), "Out", "Quad", 0.2, true)
-        for _,v in ipairs(frame:GetChildren()) do
-            if v ~= closeBtn and v ~= minBtn then
-                v.Visible = false
-            end
-        end
+        anchorToggle.button.Visible = false
+        afkToggle.button.Visible = false
     else
         frame:TweenSize(UDim2.new(0,220,0,160), "Out", "Quad", 0.2, true)
-        for _,v in ipairs(frame:GetChildren()) do
-            v.Visible = true
-        end
+        anchorToggle.button.Visible = true
+        afkToggle.button.Visible = true
     end
 end)
 
 -- =========================
--- ANTI AFK LOOP
+-- ANTI-AFK LOOP
 -- =========================
 spawn(function()
     while running do
@@ -168,7 +163,7 @@ local function destroyAll()
         if hrp then hrp.Anchored = false end
     end
 
-    -- reset toggle
+    -- reset toggle state
     anchorToggle.setState(false)
     afkToggle.setState(false)
 
