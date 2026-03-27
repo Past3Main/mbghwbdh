@@ -2,7 +2,9 @@ local player = game.Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
 local VirtualUser = game:GetService("VirtualUser")
 
+-- =========================
 -- GUI
+-- =========================
 local gui = Instance.new("ScreenGui")
 gui.Parent = player:WaitForChild("PlayerGui")
 
@@ -15,22 +17,40 @@ frame.Active = true
 frame.Draggable = true
 frame.Parent = gui
 
-local frameCorner = Instance.new("UICorner")
-frameCorner.CornerRadius = UDim.new(0, 14)
-frameCorner.Parent = frame
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 14)
 
+-- =========================
 -- FLAGS
+-- =========================
 local running = true
 local minimized = false
 
--- FUNCTION
+-- =========================
+-- FUNCTIONS
+-- =========================
 local function getHRP()
     local char = player.Character or player.CharacterAdded:Wait()
     return char:WaitForChild("HumanoidRootPart")
 end
 
+local function equipSlot2()
+    local backpack = player:WaitForChild("Backpack")
+    local char = player.Character or player.CharacterAdded:Wait()
+    local humanoid = char:WaitForChild("Humanoid")
+
+    -- retry biar aman
+    for i = 1,5 do
+        local tools = backpack:GetChildren()
+        if #tools >= 2 then
+            humanoid:EquipTool(tools[2])
+            return
+        end
+        task.wait(0.5)
+    end
+end
+
 -- =========================
--- TOGGLE FUNCTION
+-- TOGGLE
 -- =========================
 local function createToggle(parent, position, callback)
     local btn = Instance.new("TextButton")
@@ -40,9 +60,7 @@ local function createToggle(parent, position, callback)
     btn.Text = ""
     btn.Parent = parent
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(1,0)
-    corner.Parent = btn
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(1,0)
 
     local circle = Instance.new("Frame")
     circle.Size = UDim2.new(0, 30, 0, 30)
@@ -50,9 +68,7 @@ local function createToggle(parent, position, callback)
     circle.BackgroundColor3 = Color3.fromRGB(255,255,255)
     circle.Parent = btn
 
-    local circleCorner = Instance.new("UICorner")
-    circleCorner.CornerRadius = UDim.new(1,0)
-    circleCorner.Parent = circle
+    Instance.new("UICorner", circle).CornerRadius = UDim.new(1,0)
 
     local state = false
     local debounce = false
@@ -63,6 +79,7 @@ local function createToggle(parent, position, callback)
 
         state = not state
         local targetX = state and 47 or 3
+
         TweenService:Create(circle, TweenInfo.new(0.2), {
             Position = UDim2.new(0, targetX, 0, 3)
         }):Play()
@@ -77,8 +94,7 @@ local function createToggle(parent, position, callback)
         getState = function() return state end,
         setState = function(val)
             state = val
-            local targetX = state and 47 or 3
-            circle.Position = UDim2.new(0, targetX, 0, 3)
+            circle.Position = UDim2.new(0, state and 47 or 3, 0, 3)
             if callback then callback(state) end
         end,
         button = btn
@@ -93,9 +109,7 @@ local anchorToggle = createToggle(frame, UDim2.new(0,10,0,50), function(state)
     hrp.Anchored = state
 end)
 
-local afkToggle = createToggle(frame, UDim2.new(0,10,0,100), function(state)
-    -- dipakai di loop
-end)
+local afkToggle = createToggle(frame, UDim2.new(0,10,0,100))
 
 -- =========================
 -- BUTTONS
@@ -108,10 +122,7 @@ closeBtn.Text = "X"
 closeBtn.TextColor3 = Color3.new(1,1,1)
 closeBtn.BorderSizePixel = 0
 closeBtn.Parent = frame
-
-local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(1,0)
-closeCorner.Parent = closeBtn
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(1,0)
 
 local minBtn = Instance.new("TextButton")
 minBtn.Size = UDim2.new(0,28,0,28)
@@ -121,25 +132,19 @@ minBtn.Text = "-"
 minBtn.TextColor3 = Color3.new(1,1,1)
 minBtn.BorderSizePixel = 0
 minBtn.Parent = frame
-
-local minCorner = Instance.new("UICorner")
-minCorner.CornerRadius = UDim.new(1,0)
-minCorner.Parent = minBtn
+Instance.new("UICorner", minBtn).CornerRadius = UDim.new(1,0)
 
 -- =========================
--- IMAGE (ICON MINIMIZE)
+-- IMAGE MINIMIZE
 -- =========================
 local image = Instance.new("ImageLabel")
 image.Size = UDim2.new(1,0,1,0)
 image.BackgroundTransparency = 1
 image.Image = "rbxassetid://100141220459015"
-image.Visible = true
+image.Visible = false
 image.Parent = frame
 image.ScaleType = Enum.ScaleType.Crop
-
-local imgCorner = Instance.new("UICorner")
-imgCorner.CornerRadius = UDim.new(0,14)
-imgCorner.Parent = image
+Instance.new("UICorner", image).CornerRadius = UDim.new(0,14)
 
 local imageButton = Instance.new("TextButton")
 imageButton.Size = UDim2.new(1,0,1,0)
@@ -152,7 +157,6 @@ imageButton.Parent = image
 -- =========================
 minBtn.MouseButton1Click:Connect(function()
     minimized = true
-
     frame:TweenSize(UDim2.new(0,60,0,60), "Out", "Quad", 0.2, true)
 
     anchorToggle.button.Visible = false
@@ -163,10 +167,8 @@ minBtn.MouseButton1Click:Connect(function()
     image.Visible = true
 end)
 
--- EXPAND (klik icon)
 imageButton.MouseButton1Click:Connect(function()
     minimized = false
-
     frame:TweenSize(UDim2.new(0,220,0,160), "Out", "Quad", 0.2, true)
 
     anchorToggle.button.Visible = true
@@ -180,7 +182,7 @@ end)
 -- =========================
 -- ANTI AFK
 -- =========================
-spawn(function()
+task.spawn(function()
     while running do
         task.wait(math.random(540,660))
         if afkToggle.getState() then
@@ -192,9 +194,26 @@ spawn(function()
 end)
 
 -- =========================
--- DESTROY ALL
+-- RESPAWN HANDLER (KUNCI)
 -- =========================
-local function destroyAll()
+player.CharacterAdded:Connect(function(char)
+    print("Respawn detected")
+
+    local hrp = char:WaitForChild("HumanoidRootPart")
+
+    task.wait(1) -- biar tool & char siap
+
+    equipSlot2()
+
+    if anchorToggle.getState() then
+        hrp.Anchored = true
+    end
+end)
+
+-- =========================
+-- CLOSE
+-- =========================
+closeBtn.MouseButton1Click:Connect(function()
     running = false
 
     if player.Character then
@@ -202,10 +221,5 @@ local function destroyAll()
         if hrp then hrp.Anchored = false end
     end
 
-    anchorToggle.setState(false)
-    afkToggle.setState(false)
-
     gui:Destroy()
-end
-
-closeBtn.MouseButton1Click:Connect(destroyAll)
+end)
